@@ -33,6 +33,7 @@ val oracle_to_rust: string -> (Scope.t -> LustreNode.t) -> LustreNode.t -> (
 )
 
 (** add the Lustre -> Rust Functions so they can be reused in the NoStd version *)
+
 (* Unsafe string representation of an ident, used for rust identifiers. *)
 val mk_id_legal: 
   Id.t -> string
@@ -41,3 +42,11 @@ val mk_id_legal:
 conventions for type naming. *)
 val mk_id_type:
   Id.t -> string
+
+(* Specialization of [fmt_prefix] for implementation. *)
+val fmt_prefix_implem:
+  string -> Format.formatter -> string -> unit
+
+  (* Specialization of [fmt_prefix] for oracles. *)
+val fmt_prefix_oracle:
+  string -> Format.formatter -> string -> unit

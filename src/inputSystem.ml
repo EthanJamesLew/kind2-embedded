@@ -739,6 +739,18 @@ fun sys top_scope target ->
   | Horn _ ->
     Format.printf "can't compile from horn clause input: unsupported"
 
+let compile_to_rust_no_std (type s): s t -> Scope.t -> string -> unit =
+fun sys top_scope target ->
+  match sys with
+  | Lustre (main_subs, _, _) ->
+    LustreToRustNoStd.implem_to_rust_no_std target (
+      fun scope -> (S.find_subsystem_of_list main_subs scope).S.source
+    ) (S.find_subsystem_of_list main_subs top_scope).S.source
+  | Native _ ->
+    Format.printf "can't compile from native input: unsupported"
+  | Horn _ ->
+    Format.printf "can't compile from horn clause input: unsupported"
+
 let compile_oracle_to_rust (type s): s t -> Scope.t -> string -> (
   string *
   (Lib.position * int) list *

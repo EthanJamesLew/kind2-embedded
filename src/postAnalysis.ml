@@ -575,7 +575,7 @@ module RunRustNoStdGen: PostAnalysis = struct
     KEvent.log_uncond
       "  Compiling node '%a' to Rust in '%s'."
       Scope.pp_print_scope top target ;
-    InputSystem.compile_to_rust in_sys top target ;
+    InputSystem.compile_to_rust_no_std in_sys top target ;
     KEvent.log_uncond "  Done compiling." ;
     Ok ()
 end

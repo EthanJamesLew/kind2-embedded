@@ -21,6 +21,8 @@
 open Lib
 
 module Id = LustreIdent
+module N = LustreNode
+module C = LustreContract
 
 (** Compiles a lustre node to Rust as a project in the directory given as first
 argument. *)
@@ -50,3 +52,8 @@ val fmt_prefix_implem:
   (* Specialization of [fmt_prefix] for oracles. *)
 val fmt_prefix_oracle:
   string -> Format.formatter -> string -> unit
+
+(* Compiles a node to rust, writes it to a formatter. *)
+val node_to_rust:
+  ((C.svar list * (C.svar * 'a) list * C.mode list) option
+  ) -> bool -> Format.formatter -> N.t -> Id.t list

@@ -20,6 +20,8 @@
 
 open Lib
 
+module Id = LustreIdent
+
 (** Compiles a lustre node to Rust as a project in the directory given as first
 argument. *)
 val implem_to_rust :
@@ -29,3 +31,13 @@ val implem_to_rust :
 val oracle_to_rust: string -> (Scope.t -> LustreNode.t) -> LustreNode.t -> (
   string * (position * int) list * (string * position * int) list
 )
+
+(** add the Lustre -> Rust Functions so they can be reused in the NoStd version *)
+(* Unsafe string representation of an ident, used for rust identifiers. *)
+val mk_id_legal: 
+  Id.t -> string
+
+(* Same as [mk_id_legal] but capitalizes the first letter to fit rust
+conventions for type naming. *)
+val mk_id_type:
+  Id.t -> string

@@ -765,7 +765,8 @@ let node_to_rust oracle_info is_top fmt (
   ) ;
 
   (* Struct header. *)
-  Format.fprintf fmt "pub struct %s {" typ ;
+  Format.fprintf fmt "#[derive(Copy, Clone)] @ \
+  pub struct %s {" typ;
 
   (* Fields. *)
   inputs |> List.iter (fun (_, svar) ->
@@ -901,7 +902,7 @@ let node_to_rust oracle_info is_top fmt (
         ) ->
           Format.fprintf fmt
             "\
-              let %s = try!( %s::init( (@   @[<v>%a,@]@ ) ) ) ;@ \
+              let %s = (%s::init( (@   @[<v>%a,@]@ ) ) ).unwrap();@ \ 
               let (@   @[<v>%a,@]@ ) = %s.output() ;@ \
             "
             (id_of_call cnt call)
@@ -1047,16 +1048,18 @@ let node_to_rust oracle_info is_top fmt (
         ) ->
           Format.fprintf fmt
             "\
-              let %s = try!( self.%s.next( (@   @[<v>%a,@]@ ) ) ) ;@ \
+              ( self.%s.next( (@   @[<v>%a,@]@ ) ) ).unwrap() ;@ \
+              let %s = self.%s;@ \
               let (@   @[<v>%a,@]@ ) = %s.output() ;\
             "
-            (id_of_call cnt call)
             (id_of_call cnt call)
             ( pp_print_list (fun fmt (_, svar) ->
                 Format.fprintf fmt "%s%s"
                   svar_pref (SVar.name_of_state_var svar)
               ) ",@ "
             ) (I.bindings call_inputs)
+            (id_of_call cnt call)
+            (id_of_call cnt call)
             ( pp_print_list (fun fmt (_, svar) ->
                 Format.fprintf fmt "%s%s"
                   svar_pref (SVar.name_of_state_var svar)

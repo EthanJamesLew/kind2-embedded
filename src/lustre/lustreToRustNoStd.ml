@@ -224,6 +224,7 @@ match Term.destruct term with
   | `PLUS
   | `TIMES
   | `DIV
+  | `INTDIV
   | `OR
   | `XOR
   | `AND ->
@@ -233,6 +234,8 @@ match Term.destruct term with
       | `PLUS -> " + "
       | `TIMES -> " * "
       | `DIV -> " / "
+      (* TODO: this INTDIV is unsafe... *)
+      | `INTDIV -> " / "
       | `OR -> " | "
       | `XOR -> " ^ "
       | `AND -> " & "

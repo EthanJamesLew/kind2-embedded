@@ -82,12 +82,14 @@ use Lustre::*;
 (* Helpers modules: cla parsing, types, traits for systems and stdin
 parsing. *)
 let fmt_helpers fmt systems = Format.fprintf fmt "\
+/// Lustre Language Traits
 pub mod Lustre {
   /// Lustre Types
   pub type Int = i32;
   pub type Real = f32;
   pub type Bool = bool;
 
+  /// Lustre System (Component)
   pub trait System: Sized {
     // component types
     type Input;
@@ -267,7 +269,7 @@ match Term.destruct term with
 | Term.T.Const sym ->
   ( match Symbol.node_of_symbol sym with
     | `NUMERAL n -> Format.fprintf fmt "%a" Numeral.pp_print_numeral n
-    | `DECIMAL d -> Format.fprintf fmt "%a" Decimal.pp_print_decimal_as_float d
+    | `DECIMAL d -> Format.fprintf fmt "%a" Decimal.pp_print_decimal_as_float32 d
     | `TRUE -> Format.fprintf fmt "true"
     | `FALSE -> Format.fprintf fmt "false"
     | _ -> Format.asprintf "Const %a" Symbol.pp_print_symbol sym |> failwith
@@ -817,7 +819,7 @@ let node_to_rust oracle_info is_top fmt (
     | _ -> failwith "unreachable"
   ) ;
 
-  Format.fprintf fmt "@.}@.@.impl Sys for %s {@." typ ;
+  Format.fprintf fmt "@.}@.@.impl System for %s {@." typ ;
 
   (* Input type. *)
   inputs
@@ -846,42 +848,6 @@ let node_to_rust oracle_info is_top fmt (
   List.length inputs
   |> Format.fprintf fmt "  fn arity() -> usize { %d }@." ;
 
-  (* Input parsing. *)
-  let input_cpt = ref 0 in
-  Format.fprintf fmt "  \
-      @[<v>\
-        fn input_of(vec: Vec<String>) -> Result<Self::Input, String> {@   \
-          @[<v>\
-            match vec.len() {@   \
-              @[<v>\
-                n if n == Self::arity() => {@   \
-                  @[<v>\
-                    Ok( (@   @[<v>%a@],@ ) )\
-                  @]@ \
-                },@ \
-                n => Err(@   \
-                  @[<v>\
-                    format!(@   \
-                      \"arity mismatch, expected {} but got {}: {:?}\",@   \
-                      Self::arity(), n, vec@ \
-                    )@ \
-                  @]@ \
-                ),\
-              @]@ \
-            }\
-          @]@ \
-        }\
-      @]@.@.\
-    "
-    ( pp_print_list (fun fmt (_, svar) ->
-        Format.fprintf fmt "try!( parse::%s(& vec[%d]) )" (
-          SVar.type_of_state_var svar
-          |> parser_for
-        ) ! input_cpt ;
-        input_cpt := 1 + !input_cpt
-      ) ", @ "
-    ) inputs ;
-
   (* Init. *)
   let input_cpt = ref 0 in
   let eqs_init =
@@ -892,7 +858,7 @@ let node_to_rust oracle_info is_top fmt (
   ) ;
 
   Format.fprintf fmt "  \
-      fn init(input: Self::Input) -> Result<Self, String> {@.    \
+      fn init(input: Self::Input) -> Result<Self, ()> {@.    \
         @[<v>\
           // |===| Retrieving inputs.@ \
           %a@ @ \
@@ -1039,7 +1005,7 @@ let node_to_rust oracle_info is_top fmt (
   ) ;
 
   Format.fprintf fmt "  \
-      fn next(mut self, input: Self::Input) -> Result<Self, String> {@.    \
+      fn next(&mut self, input: Self::Input) -> Result<(), ()> {@.    \
         @[<v>\
           // |===| Retrieving inputs.@ \
           %a@ @ \
@@ -1054,7 +1020,7 @@ let node_to_rust oracle_info is_top fmt (
           // |===| Outputs.@ %a@ @ \
           // |===| Locals.@ %a@ @ \
           // |===| Calls.@ %a@ @ \
-          // |===| Return new state.@ Ok( self )\
+          // |===| Return new state.@ Ok( () )\
         @]@.  \
       }@.@.\
     "
@@ -1169,7 +1135,7 @@ let node_to_rust oracle_info is_top fmt (
   (* Output. *)
   outputs
   |> Format.fprintf fmt "  \
-    fn output(& self) -> Self::Output {(@.    \
+    fn output(&self) -> Self::Output {(@.    \
       @[<v>%a@],@.  \
     )}@.\
   " (
@@ -1177,25 +1143,6 @@ let node_to_rust oracle_info is_top fmt (
       Format.fprintf fmt "self.%s%s" svar_pref (SVar.name_of_state_var svar)
     ) ",@ "
   ) ;
-
-  (* Output to string. *)
-  Format.fprintf fmt "  \
-    @[<v>\
-      fn output_str(& self) -> String {@   \
-        @[<v>\
-          format!(@   \
-            @[<v>\"%a\",@ %a@]@ \
-          )\
-        @]@ \
-      }\
-    @]@.\
-  " (
-    pp_print_list (fun fmt _ -> Format.fprintf fmt "{}") ", \\@ "
-  ) outputs (
-    pp_print_list (fun fmt (_, svar) ->
-      Format.fprintf fmt "self.%s%s" svar_pref (SVar.name_of_state_var svar)
-    ) ",@ "
-  ) outputs ;
 
   Format.fprintf fmt "}@.@." ;
 
@@ -1216,7 +1163,7 @@ let to_rust_no_std oracle_info target find_sub top =
   mk_dir src_dir ;
   
   (* Opening writer to file. *)
-  let file = Format.sprintf "%s/main.rs" src_dir in
+  let file = Format.sprintf "%s/lib.rs" src_dir in
   let out_channel = open_out file in
   let fmt = Format.formatter_of_out_channel out_channel in
   Format.pp_set_margin fmt max_int ;
@@ -1244,7 +1191,7 @@ let to_rust_no_std oracle_info target find_sub top =
           compiled,
           nodes @ (
             (* Compiling nodes, getting subnodes back. *)
-            L2R.node_to_rust oracle_info is_top fmt node
+            node_to_rust oracle_info is_top fmt node
             (* Discarding subnodes we already compiled. *)
             |> List.fold_left (fun l call_id ->
               if Id.Set.mem call_id compiled |> not

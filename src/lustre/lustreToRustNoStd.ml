@@ -1152,6 +1152,30 @@ let node_to_rust oracle_info is_top fmt (
     | _ -> failwith "unreachable"
   )
 
+(* Dumps the default [Cargo.toml] file in a directory. *)
+let dump_toml is_oracle name dir =
+  let rsc_dir = "rsc" in
+  let build_file = Format.sprintf "%s/build.rs" rsc_dir in
+
+  (* Generate cargo configuration file. *)
+  let out_channel = Format.sprintf "%s/Cargo.toml" dir |> open_out in
+  let fmt = Format.formatter_of_out_channel out_channel in
+  Format.fprintf fmt
+    "\
+      [package]@.\
+      name = \"%s_%s\"@.\
+      version = \"0.1.0\"@.\
+      authors = [\"Kind 2 <elew@galois.com>\"]@.\
+      edition = \"2021\"@.\
+      @.\
+      # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html@.\
+      @.\
+      [dependencies]@.\
+    "
+    name (if is_oracle then "oracle" else "implem");
+
+  close_out out_channel 
+
 (* TODO: Compiles a node to rust without std, writes it to a Formatter *)
 let to_rust_no_std oracle_info target find_sub top =
   (* Format.printf "node: @[<v>%a@]@.@." (N.pp_print_node false) top ; *)
@@ -1161,7 +1185,8 @@ let to_rust_no_std oracle_info target find_sub top =
   (* Creating source dir. *)
   let src_dir = Format.sprintf "%s/src" target in
   mk_dir src_dir ;
-  
+  (* Dump toml configuration file. *)
+  dump_toml (oracle_info <> None) top_name target ;
   (* Opening writer to file. *)
   let file = Format.sprintf "%s/lib.rs" src_dir in
   let out_channel = open_out file in

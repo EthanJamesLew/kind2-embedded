@@ -175,7 +175,7 @@ let pp_print_decimal_as_float32 fmt = function
     
     (* Print with division as prefix operator *)
     Format.fprintf fmt 
-      "%sf64 / %sf64"
+      "%sf32 / %sf32"
       (Big_int.string_of_big_int rn)
       (Big_int.string_of_big_int rd)
 )

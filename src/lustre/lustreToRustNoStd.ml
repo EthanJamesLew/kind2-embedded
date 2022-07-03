@@ -10,8 +10,6 @@ module SVM = StateVar.StateVarMap
 module SVS = StateVar.StateVarSet
 module L2R = LustreToRust
 
-(* Name of the parsing functions in the rust [parse] module. *)
-let parse_bool_fun, parse_int_fun, parse_real_fun = "bool", "int", "real"
 
 (* File name at the end of a path. *)
 let file_name_of_path file_path =
@@ -81,7 +79,7 @@ use Lustre::*;
 
 (* Helpers modules: cla parsing, types, traits for systems and stdin
 parsing. *)
-let fmt_helpers fmt systems = Format.fprintf fmt "\
+let fmt_helpers fmt () = Format.fprintf fmt "\
 /// Lustre Language Traits
 pub mod Lustre {
   /// Lustre Types
@@ -246,7 +244,6 @@ match Term.destruct term with
       (wrap_with_sep ")" op kids) :: next
     ) fmt kid
   | `DISTINCT
-  | `INTDIV
   | `ABS
   | _ ->
     Format.asprintf "unsupported symbol %a" Symbol.pp_print_symbol sym
@@ -298,16 +295,6 @@ and fmt_term_up svar_pref fmt = function
 (* Formatter for terms as rust expressions. *)
 let fmt_term svar_pref = fmt_term_down svar_pref []
 
-
-(* Rust-level parsing function for a type. *)
-let parser_for t = match Type.node_of_type t with
-| Type.Bool -> parse_bool_fun
-| Type.Int
-| Type.IntRange _ -> parse_int_fun
-| Type.Real -> parse_real_fun
-| _ ->
-  Format.asprintf "type %a is not supported" Type.pp_print_type t
-  |> failwith
 
 (* Prefix for all state variables. *)
 let svar_pref = "svar_"
@@ -1024,7 +1011,7 @@ let node_to_rust oracle_info is_top fmt (
           // |===| Outputs.@ %a@ @ \
           // |===| Locals.@ %a@ @ \
           // |===| Calls.@ %a@ @ \
-          // |===| Return new state.@ Ok( () )\
+          // |===| Return Nothing Result.@ Ok( () )\
         @]@.  \
       }@.@.\
     "
@@ -1160,9 +1147,6 @@ let node_to_rust oracle_info is_top fmt (
 
 (* Dumps the default [Cargo.toml] file in a directory. *)
 let dump_toml is_oracle name dir =
-  let rsc_dir = "rsc" in
-  let build_file = Format.sprintf "%s/build.rs" rsc_dir in
-
   (* Generate cargo configuration file. *)
   let out_channel = Format.sprintf "%s/Cargo.toml" dir |> open_out in
   let fmt = Format.formatter_of_out_channel out_channel in
@@ -1235,12 +1219,13 @@ let to_rust_no_std oracle_info target find_sub top =
     | [] -> systems
   in
 
-  let systems = compile true [] Id.Set.empty [ top ] in
+  (* compile the system -- we won't use the ids for now... *)
+  let _ = compile true [] Id.Set.empty [ top ] in
 
   Format.fprintf fmt "@.@." ;
 
   (* we will deal with the helpers later... and in another workspace *)
-  Format.fprintf fmt "%a@.@." fmt_helpers systems ;
+  Format.fprintf fmt "%a@.@." fmt_helpers ();
 
   (* Flush and close file writer. *)
   close_out out_channel

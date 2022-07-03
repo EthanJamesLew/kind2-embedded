@@ -554,7 +554,7 @@ module RunRustGen: PostAnalysis = struct
     Ok ()
 end
 
-(** Rust No Std generation.
+(** 2021 Rust No Std generation.
 Compiles lustre as Rust without Std. *)
 module RunRustNoStdGen: PostAnalysis = struct
   let name = "rustgen_nostd"
@@ -562,9 +562,9 @@ module RunRustNoStdGen: PostAnalysis = struct
   let is_active () = Flags.lus_compile_no_std ()
   let run in_sys param _ _ =
     KEvent.log L_note
-      "(NOT IMPLEMENTED) Rust with standard library is not yet implemented,
-      using the normal rust gen for now. Compilation to Rust is still a rather 
-      experimental feature: in particular, arrays are not supported." ;
+      "Building a Rust 2021 library of Lustre systems (no std required).@ \
+      Compilation to Rust is still a rather experimental feature. @ \
+      In particular, arrays are not supported." ;
     let top = (Analysis.info_of_param param).Analysis.top in
     let target = Flags.subdir_for top in
     (* Creating directories if needed. *)

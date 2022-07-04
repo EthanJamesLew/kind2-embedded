@@ -892,7 +892,7 @@ let node_to_rust oracle_info is_top fmt (
         ) ->
           Format.fprintf fmt
             "\
-              let %s = (%s::init( (@   @[<v>%a,@]@ ) ) ).unwrap();@ \ 
+              let %s = %s::init( (@   @[<v>%a,@]@ ) )?;@ \ 
               let (@   @[<v>%a,@]@ ) = %s.output() ;@ \
             "
             (id_of_call cnt call)
@@ -1038,7 +1038,7 @@ let node_to_rust oracle_info is_top fmt (
         ) ->
           Format.fprintf fmt
             "\
-              ( self.%s.next( (@   @[<v>%a,@]@ ) ) ).unwrap() ;@ \
+              self.%s.next( (@   @[<v>%a,@]@ ) )?;@ \
               let %s = self.%s;@ \
               let (@   @[<v>%a,@]@ ) = %s.output() ;\
             "

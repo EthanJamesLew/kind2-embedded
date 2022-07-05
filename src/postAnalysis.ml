@@ -554,6 +554,32 @@ module RunRustGen: PostAnalysis = struct
     Ok ()
 end
 
+(** 2021 Rust No Std generation.
+Compiles lustre as Rust without Std. *)
+module RunRustNoStdGen: PostAnalysis = struct
+  let name = "rustgen_nostd"
+  let title = "rust generation (no std)"
+  let is_active () = Flags.lus_compile_no_std ()
+  let run in_sys param _ _ =
+    KEvent.log L_note
+      "Building a Rust 2021 library of Lustre systems (no std required).@ \
+      Compilation to Rust is still a rather experimental feature. @ \
+      In particular, arrays are not supported." ;
+    let top = (Analysis.info_of_param param).Analysis.top in
+    let target = Flags.subdir_for top in
+    (* Creating directories if needed. *)
+    Flags.output_dir () |> mk_dir ;
+    mk_dir target ;
+    (* Implementation directory. *)
+    let target = Format.sprintf "%s/%s" target Paths.implem in
+    KEvent.log_uncond
+      "  Compiling node '%a' to Rust in '%s'."
+      Scope.pp_print_scope top target ;
+    InputSystem.compile_to_rust_no_std in_sys top target ;
+    KEvent.log_uncond "  Done compiling." ;
+    Ok ()
+end
+
 (** Invariant print.
 Prints invariants used in the proof. *)
 module RunInvPrint: PostAnalysis = struct
@@ -927,6 +953,7 @@ let post_analysis = [
   (module RunContractGen: PostAnalysis) ;
   (module RunTestGen: PostAnalysis) ;
   (module RunRustGen: PostAnalysis) ;
+  (module RunRustNoStdGen: PostAnalysis) ;
   (module RunAssumptionGen: PostAnalysis) ;
   (module RunMCS: PostAnalysis) ;
 ]

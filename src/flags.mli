@@ -222,6 +222,9 @@ val lus_strict : unit -> bool
 (** Activates compilation to Rust. *)
 val lus_compile : unit -> bool
 
+(** Activates compilation to Rust (no std). *)
+val lus_compile_no_std : unit -> bool
+
 (** Activates transformation that pushes pre expressions *)
 val lus_push_pre : unit -> bool
 

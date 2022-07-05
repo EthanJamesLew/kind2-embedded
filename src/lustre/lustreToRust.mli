@@ -20,6 +20,10 @@
 
 open Lib
 
+module Id = LustreIdent
+module N = LustreNode
+module C = LustreContract
+
 (** Compiles a lustre node to Rust as a project in the directory given as first
 argument. *)
 val implem_to_rust :
@@ -29,3 +33,27 @@ val implem_to_rust :
 val oracle_to_rust: string -> (Scope.t -> LustreNode.t) -> LustreNode.t -> (
   string * (position * int) list * (string * position * int) list
 )
+
+(** add the Lustre -> Rust Functions so they can be reused in the NoStd version *)
+
+(* Unsafe string representation of an ident, used for rust identifiers. *)
+val mk_id_legal: 
+  Id.t -> string
+
+(* Same as [mk_id_legal] but capitalizes the first letter to fit rust
+conventions for type naming. *)
+val mk_id_type:
+  Id.t -> string
+
+(* Specialization of [fmt_prefix] for implementation. *)
+val fmt_prefix_implem:
+  string -> Format.formatter -> string -> unit
+
+  (* Specialization of [fmt_prefix] for oracles. *)
+val fmt_prefix_oracle:
+  string -> Format.formatter -> string -> unit
+
+(* Compiles a node to rust, writes it to a formatter. *)
+val node_to_rust:
+  ((C.svar list * (C.svar * 'a) list * C.mode list) option
+  ) -> bool -> Format.formatter -> N.t -> Id.t list

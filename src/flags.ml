@@ -3094,6 +3094,22 @@ module Global = struct
     )
   let lus_compile () = !lus_compile
 
+  (* Rust 2021 no_std compile target *)
+  let lus_compile_no_std_default = false
+  let lus_compile_no_std = ref lus_compile_default
+  let _ = add_spec
+    "--compile_no_std"
+    (bool_arg lus_compile_no_std)
+    (fun fmt ->
+      Format.fprintf fmt
+        "\
+          Nodes proved correct will be compiled to Rust without std@ \
+          Note that uninitialized pre's are not allowed in this mode@ \
+          Default: %a\
+        "
+        fmt_bool lus_compile_no_std_default
+    )
+  let lus_compile_no_std () = !lus_compile_no_std
 
   (* Reject unguarded pre's in Lustre file. *)
   let lus_strict_default = false
@@ -3306,6 +3322,7 @@ let all_input_files = Global.get_all_input_files
 let clear_input_files = Global.clear_input_files
 let add_input_file = Global.add_input_file
 let lus_compile = Global.lus_compile
+let lus_compile_no_std = Global.lus_compile_no_std
 let color = Global.color
 
 (* Path to subdirectory for a system (in the output directory). *)
